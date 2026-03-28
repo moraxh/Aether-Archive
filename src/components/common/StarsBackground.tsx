@@ -8,6 +8,7 @@ import {
   useMotionValue,
   useSpring,
 } from "motion/react";
+import { usePathname } from "next/navigation";
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
@@ -71,7 +72,8 @@ function StarLayer({
   );
 }
 
-type StarsBackgroundProps = React.ComponentProps<"div"> & {
+type StarsBackgroundProps = Omit<HTMLMotionProps<"div">, "children"> & {
+  children?: React.ReactNode;
   factor?: number;
   speed?: number;
   transition?: SpringOptions;
@@ -89,6 +91,7 @@ function StarsBackground({
   pointerEvents = true,
   ...props
 }: StarsBackgroundProps) {
+  const pathname = usePathname();
   const offsetX = useMotionValue(1);
   const offsetY = useMotionValue(1);
 
@@ -108,10 +111,11 @@ function StarsBackground({
   );
 
   return (
-    <div
+    <motion.div
       data-slot="stars-background"
       className={cn(
-        "relative size-full overflow-hidden bg-[radial-gradient(ellipse_at_bottom,_#262626_0%,_#000_100%)]",
+        "relative size-full overflow-hidden bg-[radial-gradient(ellipse_at_bottom,_#262626_0%,_#000_100%)] transition-opacity duration-500 ease-out",
+        pathname === "/" ? "opacity-100" : "opacity-50",
         className,
       )}
       onMouseMove={handleMouseMove}
@@ -149,7 +153,7 @@ function StarsBackground({
         />
       </motion.div>
       {children}
-    </div>
+    </motion.div>
   );
 }
 

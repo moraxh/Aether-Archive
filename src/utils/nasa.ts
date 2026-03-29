@@ -77,9 +77,13 @@ export function applyClientFilters(
   let result = [...items];
 
   if (filters.centers.length > 1) {
-    result.filter((item) =>
-      filters.centers.includes(item.data[0].center.toLowerCase()),
+    const normalizedCenters = filters.centers.map((center) =>
+      center.toUpperCase(),
     );
+    result = result.filter((item) => {
+      const center = item.data[0]?.center?.toUpperCase();
+      return center ? normalizedCenters.includes(center) : false;
+    });
   }
 
   if (filters.size !== "all") {

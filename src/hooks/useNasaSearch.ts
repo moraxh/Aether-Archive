@@ -59,7 +59,14 @@ export const NasaSearchFiltersSchema = z.object({
   centers: z
     .string()
     .optional()
-    .transform((val) => (val ? val.split(",") : [])),
+    .transform((val) =>
+      val
+        ? val
+            .split(",")
+            .map((center) => center.trim().toUpperCase())
+            .filter(Boolean)
+        : [],
+    ),
   sort: z.enum(["relevance", "date_desc", "date_asc"]).default("relevance"),
   size: z.enum(["small", "medium", "large", "all"]).default("all"),
   aspect_resolution: z
@@ -85,6 +92,20 @@ export default function useNasaSearch() {
   const searchParams = useSearchParams();
 
   const searchString = searchParams.toString();
+
+  const updateSearchParams = useCallback(
+    (updater: (params: URLSearchParams) => void) => {
+      const params = new URLSearchParams(searchString);
+      updater(params);
+      const nextSearchString = params.toString();
+
+      if (nextSearchString === searchString) return;
+
+      const nextHref = nextSearchString ? `?${nextSearchString}` : "?";
+      router.replace(nextHref, { scroll: false });
+    },
+    [router, searchString],
+  );
 
   const filters = useMemo(() => {
     const parsed = NasaSearchFiltersSchema.safeParse(
@@ -169,40 +190,44 @@ export default function useNasaSearch() {
 
   const setFilter = useCallback(
     (key: keyof z.infer<typeof NasaSearchFiltersSchema>, value: unknown) => {
-      const params = new URLSearchParams(searchParams.toString());
+      updateSearchParams((params) => {
+        const isEmpty =
+          !value ||
+          value === "all" ||
+          (Array.isArray(value) && value.length === 0);
 
-      const isEmpty =
-        !value ||
-        value === "all" ||
-        (Array.isArray(value) && value.length === 0);
-
-      if (isEmpty) {
-        params.delete(key);
-      } else {
-        params.set(key, Array.isArray(value) ? value.join(",") : String(value));
-      }
-
-      router.push(`?${params.toString()}`, { scroll: false });
+        if (isEmpty) {
+          params.delete(key);
+        } else {
+          const nextValue = Array.isArray(value)
+            ? value
+                .map((v) => String(v).trim().toUpperCase())
+                .filter(Boolean)
+                .join(",")
+            : String(value);
+          params.set(key, nextValue);
+        }
+      });
     },
-    [searchParams, router],
+    [updateSearchParams],
   );
 
   const openItem = useCallback(
     (nasa_id: string) => {
       lockDocumentScroll();
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("item", nasa_id);
-      router.push(`?${params.toString()}`, { scroll: false });
+      updateSearchParams((params) => {
+        params.set("item", nasa_id);
+      });
     },
-    [searchParams, router],
+    [updateSearchParams],
   );
 
   const closeItem = useCallback(() => {
     unlockDocumentScroll();
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete("item");
-    router.push(`?${params.toString()}`, { scroll: false });
-  }, [searchParams, router]);
+    updateSearchParams((params) => {
+      params.delete("item");
+    });
+  }, [updateSearchParams]);
 
   const items = useMemo(() => {
     return data?.pages.flatMap((page) => page.items) || [];

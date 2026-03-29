@@ -2,6 +2,7 @@
 
 import { Calendar, Heart, Info, Share2, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import Image from "next/image";
 import { memo, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import type { NasaSearchItem } from "@/utils/nasa";
@@ -97,6 +98,9 @@ function ItemModalComponent({
         day: "numeric",
       })
     : "";
+  const imageTransitionId = item
+    ? `gallery-image-${item.data[0].nasa_id}`
+    : undefined;
 
   return createPortal(
     <AnimatePresence>
@@ -127,6 +131,7 @@ function ItemModalComponent({
             <button
               type="button"
               onClick={onClose}
+              aria-label="Close modal"
               className="absolute top-4 right-4 md:top-6 md:right-6 z-50 p-3 rounded-full bg-black/55 hover:bg-white/12 text-white backdrop-blur-md transition-colors"
             >
               <X size={20} />
@@ -146,6 +151,7 @@ function ItemModalComponent({
                 <div className="w-full max-h-full flex items-center justify-center">
                   {previewSrc ? (
                     <motion.div
+                      layoutId={imageTransitionId}
                       initial={{ opacity: 0, scale: 0.98 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{
@@ -153,13 +159,15 @@ function ItemModalComponent({
                         duration: 0.35,
                         ease: "easeOut",
                       }}
-                      className="w-full max-h-full"
+                      className="relative w-full max-h-full"
                       style={{ aspectRatio: mediaAspectRatio }}
                     >
-                      <img
+                      <Image
                         src={previewSrc}
                         alt={item.data[0].title}
-                        className="h-full w-full object-contain"
+                        fill
+                        sizes="(max-width: 768px) 100vw, 60vw"
+                        className="object-contain"
                       />
                     </motion.div>
                   ) : (

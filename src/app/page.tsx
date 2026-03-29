@@ -10,7 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ItemModal } from "@/components/common/ItemModal";
 import useNasaSearch from "@/hooks/useNasaSearch";
@@ -59,7 +59,7 @@ const CENTERS = [
   "WSTF",
 ];
 
-export default function Home() {
+function HomeContent() {
   const {
     items,
     total,
@@ -474,5 +474,13 @@ export default function Home() {
         onClose={closeItem}
       />
     </motion.div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="w-full min-h-screen" />}>
+      <HomeContent />
+    </Suspense>
   );
 }

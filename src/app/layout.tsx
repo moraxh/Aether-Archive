@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/next";
 import Footer from "@/components/common/Footer";
 import NavBar from "@/components/common/NavBar";
 import PageTransition from "@/components/common/PageTransition";
@@ -44,6 +45,7 @@ export default function RootLayout({
             <Footer />
             <Toaster position="bottom-right" closeButton />
           </TooltipProvider>
+          <Analytics />
         </Providers>
       </body>
     </html>

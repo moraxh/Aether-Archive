@@ -2,7 +2,7 @@
 
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { z } from "zod";
 import {
   applyClientFilters,
@@ -122,6 +122,18 @@ export default function useNasaSearch() {
     return parsed.data;
   }, [searchString]);
 
+  useEffect(() => {
+    if (filters.item) {
+      lockDocumentScroll();
+    } else {
+      unlockDocumentScroll();
+    }
+
+    return () => {
+      unlockDocumentScroll();
+    };
+  }, [filters.item]);
+
   const urlFilters = useMemo(() => {
     const rest = {
       q: filters.q,
@@ -212,6 +224,23 @@ export default function useNasaSearch() {
     [updateSearchParams],
   );
 
+  const resetFiltersKeepQuery = useCallback(() => {
+    updateSearchParams((params) => {
+      const q = params.get("q");
+      const keys = [...params.keys()];
+
+      for (const key of keys) {
+        if (key !== "q") {
+          params.delete(key);
+        }
+      }
+
+      if (q && !params.get("q")) {
+        params.set("q", q);
+      }
+    });
+  }, [updateSearchParams]);
+
   const openItem = useCallback(
     (nasa_id: string) => {
       lockDocumentScroll();
@@ -246,6 +275,7 @@ export default function useNasaSearch() {
     error: isError ? (error as Error).message : null,
     filters,
     setFilter,
+    resetFiltersKeepQuery,
     openItem,
     closeItem,
     fetchNextPage,

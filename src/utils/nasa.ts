@@ -76,6 +76,23 @@ export function applyClientFilters(
 ) {
   let result = [...items];
 
+  const getMaxImageArea = (item: NasaSearchItem) => {
+    const imageAreas = item.links
+      .filter(
+        (link) =>
+          link.render === "image" &&
+          Number.isFinite(link.width) &&
+          Number.isFinite(link.height) &&
+          link.width > 0 &&
+          link.height > 0,
+      )
+      .map((link) => link.width * link.height);
+
+    if (imageAreas.length === 0) return null;
+
+    return Math.max(...imageAreas);
+  };
+
   if (filters.centers.length > 1) {
     const normalizedCenters = filters.centers.map((center) =>
       center.toUpperCase(),
@@ -96,10 +113,8 @@ export function applyClientFilters(
     const { min, max } = ranges[filters.size];
 
     result = result.filter((item) => {
-      const link = item.links.find((link) => link.render === "image");
-      if (!link) return false;
-
-      const area = link.width * link.height;
+      const area = getMaxImageArea(item);
+      if (!area) return false;
 
       return area >= min && area <= max;
     });

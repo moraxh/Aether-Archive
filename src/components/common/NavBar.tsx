@@ -1,6 +1,14 @@
 "use client";
 
-import { Image as ImageIcon, Menu, Search, Star, X } from "lucide-react";
+import {
+  Flame,
+  Image as ImageIcon,
+  Menu,
+  Search,
+  Sparkles,
+  Star,
+  X,
+} from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -11,8 +19,10 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 const navItems = [
   { id: "search", label: "Explore", icon: Search, href: "/" },
+  { id: "recent", label: "Recent", icon: Sparkles, href: "/recent" },
+  { id: "popular", label: "Popular", icon: Flame, href: "/popular" },
   { id: "favorites", label: "Saved", icon: Star, href: "/favorites" },
-  { id: "apod", label: "APOD", icon: ImageIcon, href: "/apod" },
+  { id: "apod", label: "Picture of the Day", icon: ImageIcon, href: "/apod" },
 ] as const;
 
 const MotionLink = motion.create(Link);

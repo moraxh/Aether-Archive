@@ -10,10 +10,16 @@ import {
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import Image from "next/image";
-import { useCallback, useEffect, useRef, useState } from "react";
+import type { FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Masonry from "react-masonry-css";
 import { toast } from "sonner";
 import { ItemModal } from "@/components/common/ItemModal";
+import {
+  getAspectRatio,
+  MASONRY_BREAKPOINTS,
+  MediaGrid,
+} from "@/components/common/MediaGrid";
 import useNasaSearch from "@/hooks/useNasaSearch";
 
 const MEDIA_TYPES = [
@@ -154,7 +160,7 @@ export default function HomeContent() {
     return () => observer.disconnect();
   }, [hasMore, loading, fetchNextPage]);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  const handleSearchSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (localQuery.trim() !== filters.q) {
       setFilter("q", localQuery.trim());
@@ -175,6 +181,20 @@ export default function HomeContent() {
     (filters.size !== "all" ? 1 : 0) +
     (filters.aspect_resolution !== "all" ? 1 : 0) +
     filters.centers.length;
+
+  const skeletonAspectRatios = useMemo(() => {
+    const recentRatios = items
+      .map((item) => getAspectRatio(item.links))
+      .slice(-SKELETON_KEYS.length);
+
+    if (recentRatios.length === 0) {
+      return SKELETON_KEYS.map(() => "16 / 9");
+    }
+
+    return SKELETON_KEYS.map(
+      (_, index) => recentRatios[index % recentRatios.length],
+    );
+  }, [items]);
 
   return (
     <motion.div
@@ -414,76 +434,11 @@ export default function HomeContent() {
           </p>
         )}
 
-        <div className="relative z-10 columns-1 gap-6 space-y-6 sm:columns-2 lg:columns-3 xl:columns-4">
-          {items.map((item, index) => {
-            const thumb = getThumbHref(item.links);
-            const thumbLink = item.links?.find((l) => l.href === thumb);
-            if (!thumb) return null;
-            const isAboveFold = index < 12;
-
-            const aspectRatio =
-              thumbLink?.width && thumbLink?.height
-                ? `${thumbLink.width} / ${thumbLink.height}`
-                : "16 / 9";
-
-            const nasaId = item.data[0].nasa_id;
-
-            return (
-              <motion.button
-                type="button"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "400px" }}
-                transition={{ duration: 0.5, delay: (index % 10) * 0.05 }}
-                key={nasaId}
-                onClick={() => openItem(nasaId)}
-                onMouseEnter={() => preloadFromIndex(index)}
-                onFocus={() => preloadFromIndex(index)}
-                className="group relative block w-full cursor-pointer break-inside-avoid overflow-hidden rounded-xl border border-white/5 bg-[#111] text-left transition-all duration-500 hover:border-white/20"
-                style={{ aspectRatio }}
-                aria-label={`Open item ${item.data[0].title}`}
-                aria-haspopup="dialog"
-              >
-                <motion.div className="relative h-full w-full">
-                  <Image
-                    src={thumb}
-                    alt={item.data[0].title}
-                    fill
-                    priority={isAboveFold}
-                    loading={isAboveFold ? "eager" : "lazy"}
-                    fetchPriority={isAboveFold ? "high" : "auto"}
-                    quality={60}
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
-                    className="absolute inset-0 h-full w-full object-cover transition-all duration-700 ease-out group-hover:scale-105"
-                  />
-                </motion.div>
-
-                <div className="absolute inset-0 flex flex-col justify-end bg-linear-to-t from-black/90 via-black/20 to-transparent p-6 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <span className="mb-2 block text-xs font-semibold tracking-widest text-white/60 uppercase">
-                        {item.data[0].media_type}
-                      </span>
-                      <h3 className="line-clamp-2 font-display text-lg leading-snug text-white">
-                        {item.data[0].title}
-                      </h3>
-                    </div>
-                  </div>
-                </div>
-
-                {item.data[0].media_type !== "image" && (
-                  <div className="absolute top-4 left-4 rounded-full bg-black/50 p-2 text-white/80 backdrop-blur-md">
-                    {item.data[0].media_type === "video" ? (
-                      <Video size={16} />
-                    ) : (
-                      <Mic size={16} />
-                    )}
-                  </div>
-                )}
-              </motion.button>
-            );
-          })}
-        </div>
+        <MediaGrid
+          items={items}
+          openItem={openItem}
+          preloadFromIndex={(index) => preloadFromIndex(index)}
+        />
 
         {(loading || hasMore) && filters.q && (
           <div
@@ -492,19 +447,23 @@ export default function HomeContent() {
           >
             {loading ? (
               <div className="mx-auto w-full max-w-7xl">
-                <div className="columns-1 gap-6 space-y-6 sm:columns-2 lg:columns-3 xl:columns-4">
-                  {SKELETON_KEYS.map((key) => (
+                <Masonry
+                  breakpointCols={MASONRY_BREAKPOINTS}
+                  className="-ml-6 flex w-auto"
+                  columnClassName="pl-6 bg-clip-padding space-y-6"
+                >
+                  {SKELETON_KEYS.map((key, index) => (
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       key={key}
-                      className="break-inside-avoid overflow-hidden rounded-xl border border-white/5 bg-[#111] animate-pulse"
-                      style={{ height: "250px" }}
+                      className="overflow-hidden rounded-xl border border-white/5 bg-[#111] animate-pulse"
+                      style={{ aspectRatio: skeletonAspectRatios[index] }}
                     >
                       <div className="h-full w-full bg-white/5" />
                     </motion.div>
                   ))}
-                </div>
+                </Masonry>
               </div>
             ) : (
               <span className="text-xs tracking-widest text-white/20 uppercase animate-pulse">

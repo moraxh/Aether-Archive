@@ -1,7 +1,13 @@
 "use client";
 
-import { Search, SlidersHorizontal } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Filter, Trash2 } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { ItemModal } from "@/components/common/ItemModal";
+import { MediaGrid } from "@/components/common/MediaGrid";
+import type { NasaSearchItem, NasaSearchResult } from "@/utils/nasa";
 
 type FavoriteMedia = "image" | "video" | "audio";
 
@@ -16,9 +22,41 @@ type FavoriteItem = {
 const FAVORITES_STORAGE_KEY = "aether-favorites-v1";
 
 const MEDIA_FILTERS = ["all", "image", "video", "audio"] as const;
+const MEDIA_FILTER_LABELS: Record<MediaFilter, string> = {
+  all: "All",
+  image: "Image",
+  video: "Video",
+  audio: "Audio",
+};
 
 type MediaFilter = (typeof MEDIA_FILTERS)[number];
 type SortOption = "saved_desc" | "saved_asc" | "title_asc";
+
+function writeFavorites(items: FavoriteItem[]) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(items));
+}
+
+async function fetchFavoriteItemsByIds(
+  ids: string[],
+): Promise<NasaSearchItem[]> {
+  const results = await Promise.allSettled(
+    ids.map(async (id) => {
+      const res = await fetch(
+        `https://images-api.nasa.gov/search?nasa_id=${encodeURIComponent(id)}`,
+      );
+
+      if (!res.ok) return null;
+
+      const data = (await res.json()) as NasaSearchResult;
+      return data.collection.items[0] ?? null;
+    }),
+  );
+
+  return results.flatMap((entry) =>
+    entry.status === "fulfilled" && entry.value ? [entry.value] : [],
+  );
+}
 
 function readFavorites(): FavoriteItem[] {
   if (typeof window === "undefined") return [];
@@ -55,26 +93,35 @@ function readFavorites(): FavoriteItem[] {
 
 export default function FavoritesPage() {
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
-  const [query, setQuery] = useState("");
   const [mediaFilter, setMediaFilter] = useState<MediaFilter>("all");
   const [sortBy, setSortBy] = useState<SortOption>("saved_desc");
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedNasaId, setSelectedNasaId] = useState<string | null>(null);
 
   useEffect(() => {
     setFavorites(readFavorites());
   }, []);
 
-  const filteredFavorites = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
+  const removeFavorite = (nasaId: string) => {
+    setFavorites((prev) => {
+      const next = prev.filter((item) => item.nasa_id !== nasaId);
+      writeFavorites(next);
+      return next;
+    });
 
+    if (selectedNasaId === nasaId) {
+      setSelectedNasaId(null);
+    }
+
+    toast.success("Removed from favorites");
+  };
+
+  const filteredFavorites = useMemo(() => {
     let result = favorites.filter((item) => {
       const mediaMatch =
         mediaFilter === "all" ? true : item.media_type === mediaFilter;
-      const queryMatch = normalizedQuery
-        ? item.title.toLowerCase().includes(normalizedQuery) ||
-          item.nasa_id.toLowerCase().includes(normalizedQuery)
-        : true;
 
-      return mediaMatch && queryMatch;
+      return mediaMatch;
     });
 
     result = [...result].sort((a, b) => {
@@ -89,114 +136,218 @@ export default function FavoritesPage() {
     });
 
     return result;
-  }, [favorites, mediaFilter, query, sortBy]);
+  }, [favorites, mediaFilter, sortBy]);
 
-  const hasActiveFilters = query.trim().length > 0 || mediaFilter !== "all";
+  const activeFiltersCount =
+    (mediaFilter !== "all" ? 1 : 0) + (sortBy !== "saved_desc" ? 1 : 0);
+
+  const filteredFavoriteIds = useMemo(
+    () => filteredFavorites.map((item) => item.nasa_id),
+    [filteredFavorites],
+  );
+
+  const {
+    data: favoriteItems = [],
+    isLoading: loadingItems,
+    error: favoriteItemsError,
+  } = useQuery({
+    queryKey: ["favorite-items", filteredFavoriteIds],
+    queryFn: () => fetchFavoriteItemsByIds(filteredFavoriteIds),
+    enabled: filteredFavoriteIds.length > 0,
+  });
+
+  useEffect(() => {
+    if (!favoriteItemsError) return;
+
+    const message =
+      favoriteItemsError instanceof Error
+        ? favoriteItemsError.message
+        : "Failed to load saved media";
+    toast.error(message);
+  }, [favoriteItemsError]);
+
+  const clearFilters = () => {
+    setMediaFilter("all");
+    setSortBy("saved_desc");
+  };
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-6 py-12 md:py-20">
-      <header className="mb-8">
-        <h1 className="font-display text-4xl tracking-tight md:text-5xl">
-          Saved
-        </h1>
-        <p className="mt-3 max-w-2xl text-white/60">
-          Filter your saved NASA media by title, ID, media type, and order.
-        </p>
-      </header>
-
-      <section className="mb-6 rounded-2xl border border-white/10 bg-[#111]/70 p-4 md:p-5">
-        <div className="mb-4 flex items-center gap-2 text-xs tracking-widest text-white/45 uppercase">
-          <SlidersHorizontal size={14} />
-          Filters
-        </div>
-
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-[1.3fr_auto_auto] md:items-center">
-          <label className="relative block">
-            <span className="sr-only">Search saved items</span>
-            <Search
-              size={16}
-              className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-white/45"
-            />
-            <input
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search by title or NASA ID"
-              className="h-10 w-full rounded-xl border border-white/10 bg-black/30 pr-3 pl-9 text-sm text-white placeholder:text-white/35 focus:border-white/30 focus:outline-none"
-            />
-          </label>
-
-          <fieldset className="flex flex-wrap gap-2">
-            <legend className="sr-only">Media filter</legend>
-            {MEDIA_FILTERS.map((media) => {
-              const active = mediaFilter === media;
-              return (
-                <button
-                  key={media}
-                  type="button"
-                  onClick={() => setMediaFilter(media)}
-                  className={`rounded-full px-3 py-2 text-xs uppercase tracking-wide transition-colors ${active ? "bg-white text-black" : "border border-white/15 text-white/70 hover:text-white"}`}
-                >
-                  {media}
-                </button>
-              );
-            })}
-          </fieldset>
-
-          <label className="flex items-center gap-2 text-sm text-white/70">
-            <span className="sr-only">Sort saved items</span>
-            <select
-              value={sortBy}
-              onChange={(event) => setSortBy(event.target.value as SortOption)}
-              className="h-10 rounded-xl border border-white/10 bg-black/30 px-3 text-sm text-white focus:border-white/30 focus:outline-none"
-              aria-label="Sort saved items"
-            >
-              <option value="saved_desc">Latest saved</option>
-              <option value="saved_asc">Oldest saved</option>
-              <option value="title_asc">Title A-Z</option>
-            </select>
-          </label>
-        </div>
-      </section>
-
-      <section
-        aria-live="polite"
-        className="rounded-2xl border border-white/10 bg-[#111]/70 p-8 text-white/70"
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+      className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 py-12 md:py-20"
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.8, duration: 0.8, ease: [0.25, 0.1, 0, 1] }}
+        className="mb-12 max-w-3xl text-center"
       >
-        {filteredFavorites.length === 0 ? (
-          <>
-            <p className="text-base">
-              {hasActiveFilters
-                ? "No saved items match your filters."
-                : "No saved items yet."}
-            </p>
-            <p className="mt-2 text-sm text-white/50">
-              {hasActiveFilters
-                ? "Try a different query or reset media filter."
-                : "Explore the archive and save your favorite discoveries."}
-            </p>
-          </>
-        ) : (
-          <ul
-            className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
-            aria-label="Saved items"
+        <h1 className="mb-6 font-display text-5xl font-light tracking-tight md:text-7xl">
+          Saved Favorites
+        </h1>
+        <p className="text-lg font-light leading-relaxed text-white/50 md:text-xl">
+          Your personal collection of NASA discoveries.
+        </p>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1, duration: 0.8, ease: [0.25, 0.1, 0, 1] }}
+        className="mb-12 flex w-full max-w-7xl flex-col items-center"
+      >
+        <button
+          type="button"
+          onClick={() => setShowFilters((prev) => !prev)}
+          className="flex items-center space-x-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/60 transition-colors hover:border-white/30 hover:text-white"
+          aria-expanded={showFilters}
+          aria-controls="saved-filters"
+        >
+          <Filter size={16} />
+          <span>
+            Filters {activeFiltersCount > 0 && `(${activeFiltersCount})`}
+          </span>
+        </button>
+
+        <AnimatePresence>
+          {showFilters && (
+            <motion.div
+              id="saved-filters"
+              initial={{ opacity: 0, height: 0, y: -10 }}
+              animate={{ opacity: 1, height: "auto", y: 0 }}
+              exit={{ opacity: 0, height: 0, y: -10 }}
+              className="mt-8 w-full overflow-hidden rounded-2xl border border-white/10 bg-[#111]"
+            >
+              <div className="grid grid-cols-1 gap-12 p-8 md:grid-cols-2">
+                <div className="space-y-4">
+                  <h3 className="text-xs font-semibold tracking-widest text-white/40 uppercase">
+                    Media Type
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {MEDIA_FILTERS.map((media) => (
+                      <button
+                        key={media}
+                        type="button"
+                        onClick={() => setMediaFilter(media)}
+                        className={`rounded-full px-4 py-2 text-sm transition-all ${mediaFilter === media ? "bg-white text-black" : "border border-white/10 bg-white/5 text-white/70 hover:bg-white/10"}`}
+                      >
+                        {MEDIA_FILTER_LABELS[media]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-xs font-semibold tracking-widest text-white/40 uppercase">
+                    Sort By
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { id: "saved_desc", label: "Latest saved" },
+                      { id: "saved_asc", label: "Oldest saved" },
+                      { id: "title_asc", label: "Title A-Z" },
+                    ].map((opt) => (
+                      <button
+                        type="button"
+                        key={opt.id}
+                        onClick={() => setSortBy(opt.id as SortOption)}
+                        className={`rounded-full px-4 py-2 text-sm transition-all ${sortBy === opt.id ? "bg-white text-black" : "border border-white/10 bg-white/5 text-white/70 hover:bg-white/10"}`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {activeFiltersCount > 0 && (
+                <div className="mx-8 mb-8 flex justify-end border-t border-white/10 pt-6">
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="text-sm text-white/50 transition-colors hover:text-white"
+                  >
+                    Clear all filters
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.2, duration: 0.8, ease: [0.25, 0.1, 0, 1] }}
+        className="w-full"
+      >
+        {favorites.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="py-24 text-center"
           >
-            {filteredFavorites.map((item) => (
-              <li
-                key={item.nasa_id}
-                className="rounded-xl border border-white/10 bg-black/25 p-4"
-              >
-                <p className="line-clamp-2 text-sm font-medium text-white">
-                  {item.title}
-                </p>
-                <p className="mt-2 text-xs text-white/55 uppercase tracking-wide">
-                  {item.media_type} · {item.nasa_id}
-                </p>
-              </li>
-            ))}
-          </ul>
+            <p className="mb-4 font-display text-3xl text-white/30">
+              No saved items yet
+            </p>
+            <p className="font-light text-white/40">
+              Explore the archive and save your favorite discoveries.
+            </p>
+          </motion.div>
         )}
-      </section>
-    </main>
+
+        {favorites.length > 0 && filteredFavorites.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="py-24 text-center"
+          >
+            <p className="mb-4 font-display text-3xl text-white/30">
+              No matches found
+            </p>
+            <p className="font-light text-white/40">
+              Try adjusting your media type or sorting filters.
+            </p>
+          </motion.div>
+        )}
+
+        {filteredFavorites.length > 0 && (
+          <p className="mb-6 text-center text-sm text-white/40 lg:text-left">
+            {loadingItems
+              ? "Loading saved media..."
+              : `${favoriteItems.length.toLocaleString()} saved results`}
+          </p>
+        )}
+
+        <MediaGrid
+          items={favoriteItems}
+          openItem={setSelectedNasaId}
+          renderItemActions={(item) => (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                removeFavorite(item.nasa_id);
+              }}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/25 bg-black/55 text-white/85 backdrop-blur-md transition-colors hover:border-white/50 hover:text-white"
+              aria-label={`Remove ${item.title} from favorites`}
+              title="Remove from favorites"
+            >
+              <Trash2 size={16} />
+            </button>
+          )}
+        />
+      </motion.div>
+
+      <ItemModal
+        isOpen={Boolean(selectedNasaId)}
+        nasaId={selectedNasaId}
+        items={favoriteItems}
+        onClose={() => setSelectedNasaId(null)}
+      />
+    </motion.div>
   );
 }

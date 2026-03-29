@@ -1,80 +1,20 @@
 # Aether Archive
 
-Aether Archive is an unofficial, open-source search and discovery interface for NASA's public image archive.
+Hey! Welcome to Aether Archive — an unofficial, open-source alternative to NASA's AVAIL image search portal. NASA has one of the greatest image archives in human history and a search engine that doesn't do it justice. This is the interface it deserves.
 
-NASA hosts one of the most important public media collections in history. This project focuses on making that archive easier to explore with a faster, cleaner, and more intentional user experience.
+## What is and what is NOT this project?
 
-## Project Scope
+This project was born with a simple goal: make it easier and more enjoyable to explore NASA's public image archive. Better filters, persistent state, infinite scroll, camera metadata, and a design that actually honors the photography.
 
-This project is intentionally focused on one thing: **search and discovery**.
+Because this is built entirely on NASA's public APIs, we are strictly a search and discovery interface. We are not affiliated with, endorsed by, or officially connected to NASA in any way. All imagery and content belongs to NASA and its respective creators.
 
-- Better filtering and browsing for NASA media
-- Infinite scrolling and high-density gallery exploration
-- Clean metadata presentation with a photography-first UX
+## Infrastructure and Costs
 
-What this project is **not**:
+The architecture is designed to stay 100% free. It runs entirely on the client — no backend, no server, just NASA's public APIs called directly from the browser. Deployed on Vercel's free tier with zero cost. We want to keep it that way. Any idea, PR, or suggestion to optimize resource usage and keep it free forever is very welcome.
 
-- A social platform (accounts, comments, feeds)
-- A personal media manager (uploads, private libraries)
-- An official NASA product
+## Want to contribute?
 
-All imagery and content rights belong to NASA and the respective creators.
-
-## Tech Stack
-
-- `Next.js` (App Router)
-- `React`
-- `TypeScript`
-- `Tailwind CSS v4`
-- `shadcn/ui`
-- `Biome` (lint + format)
-- `pnpm`
-
-## Getting Started
-
-### 1) Install dependencies
-
-```bash
-pnpm install
-```
-
-### 2) Run locally
-
-```bash
-pnpm dev
-```
-
-Open `http://localhost:3000`.
-
-## Available Scripts
-
-```bash
-pnpm dev      # Start development server
-pnpm build    # Production build
-pnpm start    # Run production server
-pnpm lint     # Biome checks
-pnpm format   # Biome format --write
-```
-
-## Infrastructure and Cost Philosophy
-
-The project aims to remain **100% free** to operate:
-
-- Client-first architecture
-- NASA public APIs as data source
-- Vercel free tier deployment
-
-Performance and efficiency are product features. Improvements that reduce unnecessary requests, payload size, or rendering cost are always welcome.
-
-## Contributing
-
-Pull requests are welcome.
-
-Before opening a PR, please read `CONTRIBUTING.md` for scope, architecture, and review guidelines.
-
-## Disclaimer
-
-Aether Archive is an independent project and is **not affiliated with, endorsed by, or officially connected to NASA**.
+Pull requests are welcome! Just make sure to read the [Contributing Guide](CONTRIBUTING.md) before diving into the code so we're aligned on the vision of the project.
 
 ## Built by
 

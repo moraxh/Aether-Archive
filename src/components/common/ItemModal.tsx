@@ -98,9 +98,6 @@ function ItemModalComponent({
         day: "numeric",
       })
     : "";
-  const imageTransitionId = item
-    ? `gallery-image-${item.data[0].nasa_id}`
-    : undefined;
 
   return createPortal(
     <AnimatePresence>
@@ -150,15 +147,7 @@ function ItemModalComponent({
               ) : (
                 <div className="w-full max-h-full flex items-center justify-center">
                   {previewSrc ? (
-                    <motion.div
-                      layoutId={imageTransitionId}
-                      initial={{ opacity: 0, scale: 0.98 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{
-                        delay: 0.08,
-                        duration: 0.35,
-                        ease: "easeOut",
-                      }}
+                    <div
                       className="relative w-full max-h-full"
                       style={{ aspectRatio: mediaAspectRatio }}
                     >
@@ -166,10 +155,12 @@ function ItemModalComponent({
                         src={previewSrc}
                         alt={item.data[0].title}
                         fill
+                        priority
+                        quality={75}
                         sizes="(max-width: 768px) 100vw, 60vw"
                         className="object-contain"
                       />
-                    </motion.div>
+                    </div>
                   ) : (
                     <p className="text-white/50 text-sm">
                       Sin preview disponible.

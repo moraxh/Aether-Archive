@@ -419,6 +419,7 @@ export default function HomeContent() {
             const thumb = getThumbHref(item.links);
             const thumbLink = item.links?.find((l) => l.href === thumb);
             if (!thumb) return null;
+            const isAboveFold = index < 12;
 
             const aspectRatio =
               thumbLink?.width && thumbLink?.height
@@ -443,14 +444,15 @@ export default function HomeContent() {
                 aria-label={`Open item ${item.data[0].title}`}
                 aria-haspopup="dialog"
               >
-                <motion.div
-                  layoutId={`gallery-image-${nasaId}`}
-                  className="relative h-full w-full"
-                >
+                <motion.div className="relative h-full w-full">
                   <Image
                     src={thumb}
                     alt={item.data[0].title}
                     fill
+                    priority={isAboveFold}
+                    loading={isAboveFold ? "eager" : "lazy"}
+                    fetchPriority={isAboveFold ? "high" : "auto"}
+                    quality={60}
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
                     className="absolute inset-0 h-full w-full object-cover transition-all duration-700 ease-out group-hover:scale-105"
                   />

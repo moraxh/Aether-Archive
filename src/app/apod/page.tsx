@@ -296,7 +296,7 @@ export default function ApodPage() {
                   duration: shouldReduceMotion ? 0 : 0.7,
                   ease: easeOut,
                 }}
-                className={`group overflow-hidden rounded-2xl border shadow-2xl ${
+                className={`group overflow-hidden rounded-2xl border mx-auto shadow-2xl ${
                   isVideo
                     ? "border-white/10 bg-[#111]"
                     : "w-fit max-w-full border-white/20 bg-transparent shadow-[0_30px_90px_-45px_rgba(0,0,0,0.95)]"

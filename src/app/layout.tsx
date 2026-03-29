@@ -7,6 +7,7 @@ import PageTransition from "@/components/common/PageTransition";
 import { StarsBackground } from "@/components/common/StarsBackground";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import Providers from "./providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,16 +33,18 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
+      className={`${geistSans.variable} ${geistMono.variable} min-h-screen antialiased dark`}
     >
-      <body className="min-h-screen flex flex-col bg-[#050505] text-white selection:bg-white/20 relative">
-        <TooltipProvider>
-          <StarsBackground className="fixed inset-0 z-0 pointer-events-none" />
-          <NavBar />
-          <PageTransition>{children}</PageTransition>
-          <Footer />
-          <Toaster position="bottom-right" closeButton />
-        </TooltipProvider>
+      <body className="min-h-screen flex flex-col bg-[#050505] text-white selection:bg-white/20 relative overflow-x-hidden">
+        <Providers>
+          <TooltipProvider>
+            <StarsBackground className="fixed inset-0 z-0 pointer-events-none" />
+            <NavBar />
+            <PageTransition>{children}</PageTransition>
+            <Footer />
+            <Toaster position="bottom-right" closeButton />
+          </TooltipProvider>
+        </Providers>
       </body>
     </html>
   );

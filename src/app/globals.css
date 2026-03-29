@@ -53,21 +53,11 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
-  scrollbar-width: none;
+  overflow-x: clip;
 }
 
 html {
-  overflow-x: hidden;
-  scrollbar-width: none;
-}
-
-body::-webkit-scrollbar {
-  display: none;
-}
-
-html::-webkit-scrollbar {
-  display: none;
+  overflow-x: clip;
 }
 
 :root {

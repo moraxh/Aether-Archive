@@ -15,7 +15,7 @@ const navItems = [
   { id: "apod", label: "APOD", icon: ImageIcon, href: "/apod" },
 ] as const;
 
-const MotionLink = motion(Link);
+const MotionLink = motion.create(Link);
 
 const ease = [0.25, 0.1, 0.0, 1.0] as const;
 const linear = [0, 0, 1, 1] as const;
@@ -91,7 +91,7 @@ export default function NavBar() {
       animate={{ y: 0, opacity: 1 }}
       transition={navTransition}
       aria-busy={pendingHref ? "true" : "false"}
-      className={`sticky top-0 z-40 w-full transition-all duration-300 ${
+      className={`sticky top-0 z-50 w-full transition-all duration-300 ${
         isScrolled
           ? "bg-[#050505]/85 backdrop-blur-xl shadow-[0_20px_60px_-35px_rgba(0,0,0,0.85)]"
           : "bg-transparent"

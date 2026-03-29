@@ -2,6 +2,7 @@
 
 import {
   Calendar,
+  Camera,
   ChevronDown,
   Download,
   Heart,
@@ -23,7 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useNasaItem } from "@/hooks/useNasaItem";
+import { useNasaItem, useNasaPhotoMetadata } from "@/hooks/useNasaItem";
 import type { NasaSearchItem } from "@/utils/nasa";
 
 interface ItemModalProps {
@@ -61,6 +62,11 @@ type DownloadOption = {
   url: string;
   quality: string;
   resolution: string;
+};
+
+type PhotoMetadataEntry = {
+  label: string;
+  value: string;
 };
 
 function dedupeDownloadOptions(options: DownloadOption[]) {
@@ -237,6 +243,64 @@ const getSelectedItemSignature = (
   ].join("::");
 };
 
+function normalizeMetadataValue(value: unknown): string | null {
+  if (value == null) return null;
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+
+    const lowered = trimmed.toLowerCase();
+    if (lowered === "(none)" || lowered === "unknown" || lowered === "n/a") {
+      return null;
+    }
+
+    return trimmed;
+  }
+
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+
+  if (Array.isArray(value)) {
+    const parts = value
+      .map((entry) => normalizeMetadataValue(entry))
+      .filter((entry): entry is string => Boolean(entry));
+
+    if (parts.length === 0) return null;
+    return parts.join(", ");
+  }
+
+  return null;
+}
+
+function pickMetadataValue(
+  metadata: Record<string, unknown> | null | undefined,
+  keys: string[],
+): string | null {
+  if (!metadata) return null;
+
+  for (const key of keys) {
+    const value = normalizeMetadataValue(metadata[key]);
+    if (value) return value;
+  }
+
+  return null;
+}
+
+function extractImageSize(
+  metadata: Record<string, unknown> | null | undefined,
+) {
+  const composite = pickMetadataValue(metadata, ["Composite:ImageSize"]);
+  if (composite) return composite;
+
+  const width = pickMetadataValue(metadata, ["File:ImageWidth"]);
+  const height = pickMetadataValue(metadata, ["File:ImageHeight"]);
+
+  if (width && height) return `${width}x${height}`;
+  return null;
+}
+
 function ItemModalComponent({
   isOpen,
   nasaId,
@@ -246,11 +310,14 @@ function ItemModalComponent({
   const [mounted, setMounted] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [showPhotographyMetadata, setShowPhotographyMetadata] = useState(false);
   const [downloadOptions, setDownloadOptions] = useState<DownloadOption[]>([]);
 
   const { data: itemDetails, isLoading: loadingAssets } = useNasaItem(
     isOpen ? nasaId : null,
   );
+  const { data: photoMetadata, isLoading: loadingPhotoMetadata } =
+    useNasaPhotoMetadata(isOpen ? nasaId : null);
   const item = useMemo(
     () => getSelectedItem(items, nasaId) ?? itemDetails?.item ?? null,
     [items, nasaId, itemDetails?.item],
@@ -259,6 +326,87 @@ function ItemModalComponent({
   const selectedLinks = item?.links as ModalLink[] | undefined;
   const isItemLoading =
     isOpen && Boolean(nasaId) && !selectedData && loadingAssets;
+  const photographyMetadata = useMemo<PhotoMetadataEntry[]>(() => {
+    if (selectedData?.media_type !== "image" || !photoMetadata) return [];
+
+    const entries: Array<PhotoMetadataEntry | null> = [
+      {
+        label: "Camera",
+        value:
+          pickMetadataValue(photoMetadata, ["EXIF:Model", "EXIF:Make"]) ?? "",
+      },
+      {
+        label: "Lens",
+        value:
+          pickMetadataValue(photoMetadata, [
+            "EXIF:LensModel",
+            "Composite:LensID",
+            "XMP:Lens",
+          ]) ?? "",
+      },
+      {
+        label: "Aperture",
+        value:
+          pickMetadataValue(photoMetadata, [
+            "EXIF:FNumber",
+            "Composite:Aperture",
+          ]) ?? "",
+      },
+      {
+        label: "Shutter speed",
+        value:
+          pickMetadataValue(photoMetadata, [
+            "EXIF:ExposureTime",
+            "Composite:ShutterSpeed",
+          ]) ?? "",
+      },
+      {
+        label: "ISO",
+        value:
+          pickMetadataValue(photoMetadata, [
+            "EXIF:ISO",
+            "EXIF:RecommendedExposureIndex",
+          ]) ?? "",
+      },
+      {
+        label: "Focal length",
+        value:
+          pickMetadataValue(photoMetadata, [
+            "EXIF:FocalLength",
+            "Composite:FocalLength35efl",
+          ]) ?? "",
+      },
+      {
+        label: "White balance",
+        value: pickMetadataValue(photoMetadata, ["EXIF:WhiteBalance"]) ?? "",
+      },
+      {
+        label: "Captured at",
+        value:
+          pickMetadataValue(photoMetadata, [
+            "EXIF:DateTimeOriginal",
+            "Composite:DateTimeCreated",
+          ]) ?? "",
+      },
+      {
+        label: "Image size",
+        value: extractImageSize(photoMetadata) ?? "",
+      },
+      {
+        label: "Credit",
+        value:
+          pickMetadataValue(photoMetadata, [
+            "AVAIL:Photographer",
+            "EXIF:Artist",
+            "IPTC:By-line",
+          ]) ?? "",
+      },
+    ];
+
+    return entries
+      .filter((entry): entry is PhotoMetadataEntry => Boolean(entry?.value))
+      .slice(0, 10);
+  }, [photoMetadata, selectedData?.media_type]);
 
   useEffect(() => {
     setMounted(true);
@@ -290,6 +438,15 @@ function ItemModalComponent({
     if (!isOpen || !nasaId) return;
     setDownloadOptions([]);
   }, [isOpen, nasaId]);
+
+  useEffect(() => {
+    if (!nasaId) {
+      setShowPhotographyMetadata(false);
+      return;
+    }
+
+    setShowPhotographyMetadata(false);
+  }, [nasaId]);
 
   useEffect(() => {
     let active = true;
@@ -603,6 +760,80 @@ function ItemModalComponent({
                             </p>
                           )}
                         </div>
+
+                        {selectedData.media_type === "image" &&
+                          (loadingPhotoMetadata ||
+                            photographyMetadata.length > 0) && (
+                            <div className="mt-8 rounded-xl border border-white/10 bg-white/3">
+                              <button
+                                type="button"
+                                className="flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-left hover:bg-white/5"
+                                onClick={() =>
+                                  setShowPhotographyMetadata((prev) => !prev)
+                                }
+                                aria-expanded={showPhotographyMetadata}
+                              >
+                                <div className="min-w-0">
+                                  <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-white/55">
+                                    <Camera size={13} />
+                                    Photography metadata
+                                  </p>
+                                  <p className="mt-1 text-xs text-white/35">
+                                    Camera and EXIF details
+                                  </p>
+                                </div>
+                                <span className="inline-flex items-center gap-1 text-[11px] uppercase tracking-widest text-white/40 transition data-[open=true]:text-white/65">
+                                  {loadingPhotoMetadata
+                                    ? "Loading..."
+                                    : showPhotographyMetadata
+                                      ? "Collapse"
+                                      : "Expand"}
+                                  <ChevronDown
+                                    size={13}
+                                    className={`transition-transform duration-300 ease-out ${showPhotographyMetadata ? "rotate-180" : "rotate-0"}`}
+                                  />
+                                </span>
+                              </button>
+
+                              <AnimatePresence initial={false}>
+                                {showPhotographyMetadata && (
+                                  <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: "auto", opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{
+                                      duration: 0.26,
+                                      ease: "easeOut",
+                                    }}
+                                    className="overflow-hidden"
+                                  >
+                                    <div className="border-t border-white/10 px-4 pb-4 pt-3">
+                                      {loadingPhotoMetadata ? (
+                                        <div className="space-y-2 animate-pulse">
+                                          <div className="h-4 w-full rounded bg-white/10" />
+                                          <div className="h-4 w-11/12 rounded bg-white/10" />
+                                          <div className="h-4 w-9/12 rounded bg-white/10" />
+                                        </div>
+                                      ) : (
+                                        <dl className="grid grid-cols-1 gap-x-4 gap-y-3 text-sm sm:grid-cols-2">
+                                          {photographyMetadata.map((entry) => (
+                                            <div key={entry.label}>
+                                              <dt className="text-[11px] font-medium uppercase tracking-wider text-white/40">
+                                                {entry.label}
+                                              </dt>
+                                              <dd className="mt-1 text-white/72 wrap-anywhere">
+                                                {entry.value}
+                                              </dd>
+                                            </div>
+                                          ))}
+                                        </dl>
+                                      )}
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+                          )}
 
                         {selectedData.keywords &&
                           selectedData.keywords.length > 0 && (

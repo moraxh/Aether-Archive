@@ -20,6 +20,11 @@ import {
   MASONRY_BREAKPOINTS,
   MediaGrid,
 } from "@/components/common/MediaGrid";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import useNasaSearch from "@/hooks/useNasaSearch";
 
 const MEDIA_TYPES = [
@@ -76,6 +81,21 @@ const CENTERS = [
   "HQ",
   "WSTF",
 ] as const;
+
+const CENTER_DESCRIPTIONS: Record<(typeof CENTERS)[number], string> = {
+  JPL: "Jet Propulsion Laboratory (Pasadena, California)",
+  GSFC: "Goddard Space Flight Center (Greenbelt, Maryland)",
+  JSC: "Johnson Space Center (Houston, Texas)",
+  KSC: "Kennedy Space Center (Florida)",
+  ARC: "Ames Research Center (Moffett Field, California)",
+  MSFC: "Marshall Space Flight Center (Huntsville, Alabama)",
+  SSC: "Stennis Space Center (Mississippi)",
+  AFRC: "Armstrong Flight Research Center (Edwards, California)",
+  LARC: "Langley Research Center (Hampton, Virginia)",
+  GRC: "Glenn Research Center (Cleveland, Ohio)",
+  HQ: "NASA Headquarters (Washington, D.C.)",
+  WSTF: "White Sands Test Facility (New Mexico)",
+};
 
 const SKELETON_KEYS = [
   "sk-1",
@@ -371,20 +391,29 @@ export default function HomeContent() {
                   <div className="custom-scrollbar flex max-h-48 flex-wrap gap-2 overflow-y-auto pr-2">
                     {CENTERS.map((center) => {
                       const isSelected = filters.centers.includes(center);
+                      const tooltip = CENTER_DESCRIPTIONS[center];
                       return (
-                        <button
-                          type="button"
-                          key={center}
-                          onClick={() => {
-                            const newCenters = isSelected
-                              ? filters.centers.filter((c) => c !== center)
-                              : [...filters.centers, center];
-                            setFilter("centers", newCenters);
-                          }}
-                          className={`rounded-full px-3 py-1.5 text-xs transition-all ${isSelected ? "border border-white/30 bg-white/20 text-white" : "border border-white/10 bg-transparent text-white/50 hover:text-white/80"}`}
-                        >
-                          {center}
-                        </button>
+                        <Tooltip key={center}>
+                          <TooltipTrigger
+                            type="button"
+                            onClick={() => {
+                              const newCenters = isSelected
+                                ? filters.centers.filter((c) => c !== center)
+                                : [...filters.centers, center];
+                              setFilter("centers", newCenters);
+                            }}
+                            className={`rounded-full px-3 py-1.5 text-xs transition-all ${isSelected ? "border border-white/30 bg-white/20 text-white" : "border border-white/10 bg-transparent text-white/50 hover:text-white/80"}`}
+                            aria-label={`${center}: ${tooltip}`}
+                          >
+                            {center}
+                          </TooltipTrigger>
+                          <TooltipContent
+                            side="top"
+                            className="max-w-64 text-center"
+                          >
+                            {tooltip}
+                          </TooltipContent>
+                        </Tooltip>
                       );
                     })}
                   </div>

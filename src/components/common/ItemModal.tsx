@@ -672,6 +672,7 @@ function ItemModalComponent({
                         quality={75}
                         sizes="(max-width: 768px) 100vw, 60vw"
                         className="object-contain"
+                        unoptimized
                       />
                     </div>
                   ) : (

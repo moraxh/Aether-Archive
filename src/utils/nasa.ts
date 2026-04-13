@@ -66,6 +66,7 @@ export function buildUrl(
     params.set("center", filters.centers[0]);
   }
 
+  params.set("page_size", "500");
   params.set("page", String(page));
   return `${base}?${params.toString()}`;
 }

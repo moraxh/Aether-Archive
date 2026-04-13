@@ -67,7 +67,7 @@ export const NasaSearchFiltersSchema = z.object({
             .filter(Boolean)
         : [],
     ),
-  sort: z.enum(["relevance", "date_desc", "date_asc"]).default("relevance"),
+  sort: z.enum(["relevance", "date_desc", "date_asc"]).default("date_desc"),
   size: z.enum(["small", "medium", "large", "all"]).default("all"),
   aspect_resolution: z
     .enum(["portrait", "landscape", "square", "9:16", "16:9", "all"])
@@ -81,7 +81,7 @@ const defaultFilters: z.infer<typeof NasaSearchFiltersSchema> = {
   y1: 1900,
   y2: new Date().getFullYear(),
   centers: [],
-  sort: "relevance",
+  sort: "date_desc",
   aspect_resolution: "all",
   size: "all",
   item: null,

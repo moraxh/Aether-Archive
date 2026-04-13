@@ -189,7 +189,7 @@ export default function HomeContent() {
 
   const clearFilters = () => {
     setFilter("media", "all");
-    setFilter("sort", "relevance");
+    setFilter("sort", "date_desc");
     setFilter("centers", []);
     setFilter("size", "all");
     setFilter("aspect_resolution", "all");
@@ -197,7 +197,7 @@ export default function HomeContent() {
 
   const activeFiltersCount =
     (filters.media !== "all" ? 1 : 0) +
-    (filters.sort !== "relevance" ? 1 : 0) +
+    (filters.sort !== "date_desc" ? 1 : 0) +
     (filters.size !== "all" ? 1 : 0) +
     (filters.aspect_resolution !== "all" ? 1 : 0) +
     filters.centers.length;

@@ -659,7 +659,16 @@ function ItemModalComponent({
                 </motion.p>
               ) : (
                 <div className="w-full max-h-full flex items-center justify-center">
-                  {previewSrc ? (
+                  {selectedData.media_type === "video" ? (
+                    <video
+                      src={itemDetails?.assets?.find((url) =>
+                        url.endsWith(".mp4"),
+                      )}
+                      poster={previewSrc}
+                      controls
+                      className="w-full max-h-[85vh] object-contain outline-none"
+                    />
+                  ) : previewSrc ? (
                     <div
                       className="relative w-full max-h-full"
                       style={{ aspectRatio: mediaAspectRatio }}

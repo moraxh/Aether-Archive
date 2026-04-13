@@ -1,3 +1,4 @@
+import { Play } from "lucide-react";
 import { motion } from "motion/react";
 import Image from "next/image";
 import type { ReactNode } from "react";
@@ -103,6 +104,15 @@ export function MediaGrid({
                   className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                   unoptimized
                 />
+                {mediaType === "video" && (
+                  <div className="absolute top-3 left-3 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 shadow-[0_0_12px_rgba(0,0,0,0.5)] backdrop-blur-md z-10">
+                    <Play
+                      size={12}
+                      className="ml-0.5 text-white"
+                      fill="currentColor"
+                    />
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 <div className="absolute inset-x-0 bottom-0 flex translate-y-4 flex-col p-4 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
                   <span className="mb-2 w-max rounded-full border border-white/20 bg-black/50 px-2 py-1 text-[10px] tracking-wider text-white/90 uppercase backdrop-blur-md">

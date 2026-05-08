@@ -1,21 +1,116 @@
-# Aether Archive
+<p align="center">
+  <img src="media/banner.png" alt="Aether Archive Banner" width="100%">
+</p>
 
-Hey! Welcome to Aether Archive — an unofficial, open-source alternative to NASA's AVAIL image search portal. NASA has one of the greatest image archives in human history and a search engine that doesn't do it justice. This is the interface it deserves.
+<h1 align="center">Aether Archive</h1>
 
-## What is and what is NOT this project?
+<p align="center">
+  An unofficial, open-source alternative to NASA's AVAIL image search portal.
+</p>
 
-This project was born with a simple goal: make it easier and more enjoyable to explore NASA's public image archive. Better filters, persistent state, infinite scroll, camera metadata, and a design that actually honors the photography.
+<p align="center">
+  Built to make exploring NASA's public image archive fast, immersive, and enjoyable.
+</p>
 
-Because this is built entirely on NASA's public APIs, we are strictly a search and discovery interface. We are not affiliated with, endorsed by, or officially connected to NASA in any way. All imagery and content belongs to NASA and its respective creators.
+---
 
-## Infrastructure and Costs
+## Overview
 
-The architecture is designed to stay 100% free. It runs entirely on the client — no backend, no server, just NASA's public APIs called directly from the browser. Deployed on Vercel's free tier with zero cost. We want to keep it that way. Any idea, PR, or suggestion to optimize resource usage and keep it free forever is very welcome.
+NASA hosts one of the most important public image archives ever created.  
+The problem is that the current discovery experience does not reflect the quality of the material itself.
 
-## Want to contribute?
+Aether Archive rethinks that experience from the ground up:
 
-Pull requests are welcome! Just make sure to read the [Contributing Guide](CONTRIBUTING.md) before diving into the code so we're aligned on the vision of the project.
+- Faster and cleaner exploration
+- Better filtering and search behavior
+- Infinite scrolling
+- Persistent UI state
+- Rich camera and mission metadata
+- A modern interface focused on the photography
 
-## Built by
+The goal is simple: create the browsing experience this archive deserves.
 
-Jorge Mora — [moraxh](https://github.com/moraxh)
+---
+
+## What This Project Is
+
+Aether Archive is a fully client-side interface built on top of NASA's public APIs.
+
+It is focused on:
+
+- Search and discovery
+- Image exploration
+- Metadata visualization
+- Performance and usability
+- Long browsing sessions without friction
+
+---
+
+## What This Project Is Not
+
+This project is **not**:
+
+- Affiliated with NASA
+- Endorsed by NASA
+- An official NASA product
+- A replacement for NASA's archival infrastructure
+
+All imagery, metadata, and related content belong to NASA and their respective creators.
+
+Aether Archive only provides an alternative interface for accessing publicly available data.
+
+---
+
+## Architecture
+
+The entire project is designed to remain lightweight and free.
+
+### Stack
+
+- Frontend-only architecture
+- No backend
+- No database
+- No server-side processing
+- Direct communication with NASA public APIs
+
+### Deployment
+
+- Hosted on Vercel
+- Runs entirely on the free tier
+- Zero infrastructure cost
+
+Keeping the project free and sustainable is an important design constraint.  
+Ideas and pull requests focused on optimization are always welcome.
+
+---
+
+## Contributing
+
+Contributions are welcome.
+
+Before opening a pull request, please read the [Contributing Guide](CONTRIBUTING.md) to stay aligned with the project's direction and design philosophy.
+
+---
+
+## Philosophy
+
+Aether Archive is built around a simple belief:
+
+> Historic imagery deserves an interface that respects it.
+
+The archive already exists.  
+The mission is to make exploring it feel effortless.
+
+---
+
+## Credits
+
+Built by Jorge Mora  
+GitHub: [@moraxh](https://github.com/moraxh)
+
+---
+
+## License
+
+This project is open source.  
+See the repository license for details.
